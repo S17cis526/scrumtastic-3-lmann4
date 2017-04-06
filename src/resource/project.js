@@ -12,9 +12,7 @@ module.exports = {
   destroy: destroy
 }
 
-var urlencoded = require("../../lib/form-urlencoded");
-
-var auth = require("./../../lib/auth-cookie.js");
+var auth = new require('../../lib/auth-cookie.js');
 
 /** @function list
  * Sends a list of all projects as a JSON array.
@@ -23,7 +21,7 @@ var auth = require("./../../lib/auth-cookie.js");
  * @param {sqlite3.Database} db - the database object
  */
 function list(req, res, db) {
-  auth(req, res, function(req, res){
+  auth(req, res, function(req, res) {
     db.all("SELECT * FROM projects", [], function(err, projects){
       if(err) {
         console.error(err);
@@ -43,8 +41,20 @@ function list(req, res, db) {
  * @param {sqlite3.Database} db - the database object
  */
 function create(req, res, db) {
-  urlencoded(req, res, (req, res) => {
-    var project = req.body;
+  var body = "";
+
+  req.on("error", function(err){
+    console.error(err);
+    res.statusCode = 500;
+    res.end("Server error");
+  });
+
+  req.on("data", function(data){
+    body += data;
+  });
+
+  req.on("end", function() {
+    var project = JSON.parse(body);
     db.run("INSERT INTO projects (name, description, version, repository, license) VALUES (?,?,?,?,?)",
       [project.name, project.description, project.version, project.repository, project.license],
       function(err) {
@@ -95,8 +105,20 @@ function read(req, res, db) {
  */
 function update(req, res, db) {
   var id = req.params.id;
-  urlencoded(req, res, (req, res) => {
-    var project = req.body;
+  var body = "";
+
+  req.on("error", function(err){
+    console.error(err);
+    res.statusCode = 500;
+    res.end("Server error");
+  });
+
+  req.on("data", function(data){
+    body += data;
+  });
+
+  req.on("end", function() {
+    var project = JSON.parse(body);
     db.run("UPDATE projects SET name=?, description=?, version=?, repository=?, license=? WHERE id=?",
       [project.name, project.description, project.version, project.repository, project.license, id],
       function(err) {
